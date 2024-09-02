@@ -1,5 +1,6 @@
 package com.lcwd.store.services;
 
+import com.lcwd.store.dtos.PageableResponse;
 import com.lcwd.store.dtos.UserDto;
 import com.lcwd.store.entities.User;
 
@@ -13,9 +14,9 @@ public interface UserService {
     //delete
     void deleteUser(String userId);
     //get all users
-    List<UserDto> getAllUser();
+    PageableResponse<UserDto> getAllUser(int pageNumber, int pageSize, String sortBy, String sortDir);
     //get single
-    UserDto getUser(String userId);
+    UserDto getUserById(String userId);
     // get single by email
     UserDto getUserByEmail(String email);
     //search user

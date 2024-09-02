@@ -1,10 +1,18 @@
 package com.lcwd.store.services.impl;
 
+import com.lcwd.store.dtos.PageableResponse;
 import com.lcwd.store.dtos.UserDto;
 import com.lcwd.store.entities.User;
+import com.lcwd.store.exceptions.ResourceNotFoundException;
+import com.lcwd.store.helper.Helper;
 import com.lcwd.store.repositories.UserRepository;
 import com.lcwd.store.services.UserService;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -15,6 +23,8 @@ import java.util.stream.Collectors;
 public class UserServiceImpl implements UserService {
     @Autowired
     private UserRepository userRepository;
+    @Autowired
+    private ModelMapper mapper;
     @Override
     public UserDto createUser(UserDto userDto) {
 //        generate userid in string format
@@ -32,7 +42,8 @@ public class UserServiceImpl implements UserService {
     
     @Override
     public UserDto updateUser(UserDto userDto, String userId) {
-        User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not Found with given id"));
+        User user = userRepository.findById(userId).orElseThrow(() -> new
+                ResourceNotFoundException("User not Found with given id"));
         user.setName(userDto.getName());
         //email ypdate kar skte ho
         user.setAbout(userDto.getAbout());
@@ -47,28 +58,34 @@ public class UserServiceImpl implements UserService {
     
     @Override
     public void deleteUser(String userId) {
-        User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not Found with given id"));
+        User user = userRepository.findById(userId).orElseThrow(() -> new
+                ResourceNotFoundException("User not Found with given id"));
         //delete
         userRepository.delete(user);
     
     }
     
     @Override
-    public List<UserDto> getAllUser() {
-        List<User> users = userRepository.findAll();
-        List<UserDto> dtoList = users.stream().map(user -> entityToDto(user)).collect(Collectors.toList());
-        return dtoList;
+    public PageableResponse<UserDto> getAllUser(int pageNumber, int pageSize, String sortBy, String sortDir) {
+        //page start at 0
+        Sort sort=(sortDir.equalsIgnoreCase("desc")) ? (Sort.by(sortBy)).descending() :(Sort.by(sortBy).ascending()) ;
+        Pageable pageable= PageRequest.of(pageNumber,pageSize,sort);
+        Page<User> page = userRepository.findAll(pageable);
+        PageableResponse<UserDto> pageableResponse = Helper.getPageableResponse(page, UserDto.class);
+        return pageableResponse;
     }
     
     @Override
-    public UserDto getUser(String userId) {
-        User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not Found with given id"));
+    public UserDto getUserById(String userId) {
+        User user = userRepository.findById(userId).orElseThrow(() ->
+                new ResourceNotFoundException("User not Found with given id"));
         return entityToDto(user);
     }
     
     @Override
     public UserDto getUserByEmail(String email) {
-        User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found with this email"));
+        User user = userRepository.findByEmail(email).orElseThrow(() ->
+                new ResourceNotFoundException("User not found with this email"));
         
         return entityToDto(user);
     }
@@ -81,23 +98,22 @@ public class UserServiceImpl implements UserService {
     }
     
     private UserDto entityToDto(User savedUser) {
-        UserDto userDto= UserDto.builder().userId(savedUser.getUserId()).
-                name(savedUser.getName()).
-                email(savedUser.getEmail()).
-                password(savedUser.getPassword()).
-                about(savedUser.getAbout()).
-                gender(savedUser.getGender()).imageName(savedUser.getImageName()).build();
-        return  userDto;
+//        UserDto userDto= UserDto.builder().userId(savedUser.getUserId()).
+//                name(savedUser.getName()).
+//                email(savedUser.getEmail()).
+//                password(savedUser.getPassword()).
+//                about(savedUser.getAbout()).
+//                gender(savedUser.getGender()).imageName(savedUser.getImageName()).build();
+        return  mapper.map(savedUser,UserDto.class);
     }
     
     private User dtoToEntity(UserDto userDto) {
-        User user = User.builder().userId(userDto.getUserId()).
-                name(userDto.getName()).
-                email(userDto.getEmail()).
-                password(userDto.getPassword()).
-                about(userDto.getAbout()).
-                gender(userDto.getGender()).imageName(userDto.getImageName()).build();
-        
-        return user;
+//        User user = User.builder().userId(userDto.getUserId()).
+//                name(userDto.getName()).
+//                email(userDto.getEmail()).
+//                password(userDto.getPassword()).
+//                about(userDto.getAbout()).
+//                gender(userDto.getGender()).imageName(userDto.getImageName()).build();
+        return mapper.map(userDto,User.class);
     }
 }
